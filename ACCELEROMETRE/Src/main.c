@@ -15,13 +15,27 @@
   *
   ******************************************************************************
   */
+	
+
+
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
+#include "dac.h"
+#include "dma.h"
+#include "spi.h"
+#include "tim.h"
+#include "usart.h"
+#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stdio.h"
+#include "math.h"
 
+#include "ili9341.h"
+#include "ili9341_gfx.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -40,16 +54,39 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
+ili9341_t *_screen;
+float xx = 350;
+float yy = 1450;
+int zz = 500;
+int freq = 40000;
+int temps;
+int curTime = 0;
+#define TABLE_LENGTH 10000
+uint32_t tab_value1[TABLE_LENGTH];
+uint32_t tab_value2[TABLE_LENGTH];
+double gain;
+volatile int flag_done = 0;
+volatile int flag_end = 0;
+volatile int flag_table = 1;
+volatile int flag_high = 0;
+
+#define TABLE_LENGTH_AMP 1000
+uint32_t tab_valueAmp[TABLE_LENGTH_AMP];
+float k = 0.7; // amplitude du vibrato
+float ampIndex = 0;
+float A = 0;
+
+//#define TABLE_LENGTH_s 10000
+//uint32_t tab_value_s[TABLE_LENGTH_s];
+//float k = 0.7;
+//float value_S = 100;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -88,19 +125,89 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART2_UART_Init();
+  MX_SPI1_Init();
+  MX_ADC1_Init();
+  MX_TIM2_Init();
+  MX_DAC_Init();
   /* USER CODE BEGIN 2 */
+	_screen = ili9341_new(
+		&hspi1,
+		Void_Display_Reset_GPIO_Port, Void_Display_Reset_Pin,
+		TFT_CS_GPIO_Port, TFT_CS_Pin,
+		TFT_DC_GPIO_Port, TFT_DC_Pin,
+		isoLandscape,
+		NULL, NULL,
+		NULL, NULL,
+		itsNotSupported,
+		itnNormalized);
+		
+	ili9341_fill_screen(_screen, ILI9341_BLACK);
+	ili9341_text_attr_t text_attr = {&ili9341_font_11x18, ILI9341_WHITE, ILI9341_BLACK,0,0};
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	
+
+	for (int i=0;i<TABLE_LENGTH_AMP;i++) {
+		float value_s = 1.+k*sin(3.1415*(((float)i)/(500)));
+		tab_valueAmp[i]= value_s * 1000;
+	}
+
+	HAL_TIM_Base_Start(&htim2);
+	HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, tab_value1, TABLE_LENGTH, DAC_ALIGN_12B_R);
+	gain = pow ((double)(yy/xx), (double)zz/6000);
+
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-  }
+		
+		while (flag_end == 0){};
+		flag_end = 0;
+		temps++;
+		curTime = temps*(TABLE_LENGTH*1000/freq);
+		
+		if (curTime%zz == 0){
+			if (curTime <= 6000){
+				xx *= gain;
+				for (int i=0;i<TABLE_LENGTH;i++) {
+					A = tab_valueAmp[(int)floor((double)ampIndex/20)%TABLE_LENGTH_AMP];
+					if (i%((int) (freq/xx/2)) == 0) {flag_high = !flag_high;}
+					float value = (flag_high)*((100)* A/1000);
+					if (flag_table) tab_value2[i]=(int) value;
+					else tab_value1[i]=(int) value;
+					ampIndex = ampIndex + 1;
+				}
+			}
+			else {
+				xx /= gain;
+				for (int i=0;i<TABLE_LENGTH;i++) {
+					A = tab_valueAmp[(int)floor((double)ampIndex/20)%TABLE_LENGTH_AMP];
+					if (i%((int) (freq/xx/2)) == 0) {flag_high = !flag_high;}
+					float value = (flag_high)*((100)* A/1000);
+					if (flag_table) tab_value2[i]=(int) value;
+					else tab_value1[i]=(int) value;
+					ampIndex = ampIndex + 1;
+				}
+			}
+			
+			if (curTime >= 12000) {temps = 0;}
+		}
+
+
+//		ili9341_fill_screen(_screen, ILI9341_BLACK);
+//		char buf[80];
+//		sprintf(buf,"Temps:%i\r\nXX:%f\r\ntest:%f", curTime, xx, A/1000);
+//		ili9341_text_attr_t text_attr = {&ili9341_font_11x18,ILI9341_WHITE,
+//		ILI9341_BLACK,40,0};
+//		ili9341_draw_string(_screen, text_attr, buf);
+		;
+	}
   /* USER CODE END 3 */
 }
 
@@ -151,77 +258,28 @@ void SystemClock_Config(void)
   }
 }
 
-/**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART2_UART_Init(void)
-{
-
-  /* USER CODE BEGIN USART2_Init 0 */
-
-  /* USER CODE END USART2_Init 0 */
-
-  /* USER CODE BEGIN USART2_Init 1 */
-
-  /* USER CODE END USART2_Init 1 */
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART2_Init 2 */
-
-  /* USER CODE END USART2_Init 2 */
-
-}
-
-/**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_GPIO_Init(void)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
-
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin : B1_Pin */
-  GPIO_InitStruct.Pin = B1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : LD2_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
-
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
-}
-
 /* USER CODE BEGIN 4 */
+int fputc(int ch, FILE *f)
+{ 
+ /* Place your implementation of fputc here */ 
+ /* e.g. write a character to the USART2 and Loop until the end of transmission */ 
+	HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, 0xFFFF); 
+	return ch; 
+} 
+
+void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef* hdac) {
+	flag_end=1;
+	if (flag_table){
+		HAL_DAC_Start_DMA(hdac, DAC_CHANNEL_1, tab_value2, TABLE_LENGTH, DAC_ALIGN_12B_R);
+		flag_table = !flag_table;
+
+	}
+	else {
+		HAL_DAC_Start_DMA(hdac, DAC_CHANNEL_1, tab_value1, TABLE_LENGTH, DAC_ALIGN_12B_R);
+		flag_table = !flag_table;
+
+	}
+}
 
 /* USER CODE END 4 */
 
