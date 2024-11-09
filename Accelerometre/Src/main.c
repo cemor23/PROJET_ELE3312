@@ -55,7 +55,6 @@
 #define CONFIG_REG 0x1A
 #define INT_ENABLE_REG 0x38
 #define ACCEL_XOUT_H_REG 0x3B
-#define GYRO_XOUT_H_REG 0x43
 
 /* USER CODE END PD */
 
@@ -68,13 +67,14 @@
 
 /* USER CODE BEGIN PV */
 ili9341_t *_screen;
-volatile float Ax;
-volatile float Ay;
-volatile float Az;
+float Ax;
+float Ay;
+float Az;
+volatile int tag_started = 0;
 uint8_t Rec_Data[6];
-int16_t Accel_X_RAW, Accel_Y_RAW, Accel_Z_RAW;
-int16_t Gyro_X_RAW, Gyro_Y_RAW, Gyro_Z_RAW;
-
+volatile int16_t Accel_X_RAW, Accel_Y_RAW, Accel_Z_RAW;
+volatile int16_t Gyro_X_RAW, Gyro_Y_RAW, Gyro_Z_RAW;
+char buf[100];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -82,14 +82,10 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	UNUSED(GPIO_Pin);
-	if (GPIO_Pin == GPIO_PIN_11) {
+	if ((GPIO_Pin == GPIO_PIN_11) & tag_started) {
 		Accel_X_RAW = (int16_t)(Rec_Data[0] << 8 | Rec_Data [1]);
 		Accel_Y_RAW = (int16_t)(Rec_Data[2] << 8 | Rec_Data [3]);
 		Accel_Z_RAW = (int16_t)(Rec_Data[4] << 8 | Rec_Data [5]);
-		
-		Ax = Accel_X_RAW*100/16384.0;
-		Ay = Accel_Y_RAW*100/16384.0;
-		Az = Accel_Z_RAW*100/16384.0;
 	}
 }
 
@@ -98,7 +94,6 @@ void AccelInnit(void) {
 	ili9341_text_attr_t text_attr = {&ili9341_font_11x18,ILI9341_WHITE,	ILI9341_BLACK,0,0};
 	
 	if (HAL_I2C_IsDeviceReady(&hi2c1, MPU6050_ADDR, 100, 1000)!=HAL_OK) {
-		char buf[80];
 		sprintf(buf,"Error: device not ready");
 		ili9341_draw_string(_screen, text_attr, buf);
 		HAL_Delay(1000);
@@ -167,11 +162,10 @@ void AccelInnit(void) {
 void MPU6050_Read_Accel (void)
 {
 	HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR, ACCEL_XOUT_H_REG, 1, Rec_Data, 6);
-}
-
-void MPU6050_Read_Gyro(void)
-{
-    HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR, GYRO_XOUT_H_REG, 1, Rec_Data, 6);
+	
+	Ax = Accel_X_RAW*100/16384.0;
+	Ay = Accel_Y_RAW*100/16384.0;
+	Az = Accel_Z_RAW*100/16384.0;
 }
 
 /* USER CODE END PFP */
@@ -234,6 +228,7 @@ int main(void)
 	
 	HAL_TIM_Base_Start(&htim2);
 	AccelInnit();
+	tag_started = 1;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -244,10 +239,9 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 		MPU6050_Read_Accel();
-		char buf[100];
 		sprintf(buf,"x: %f\r\ny: %f\r\nz: %f", Ax, Ay, Az);
 		ili9341_draw_string(_screen, text_attr, buf);
-		HAL_Delay(500);
+		HAL_Delay(100);
   }
   /* USER CODE END 3 */
 }
