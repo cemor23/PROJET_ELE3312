@@ -68,9 +68,10 @@
 
 /* USER CODE BEGIN PV */
 ili9341_t *_screen;
-float Ax;
-float Ay;
-float Az;
+volatile float Ax;
+volatile float Ay;
+volatile float Az;
+uint8_t Rec_Data[6];
 int16_t Accel_X_RAW, Accel_Y_RAW, Accel_Z_RAW;
 int16_t Gyro_X_RAW, Gyro_Y_RAW, Gyro_Z_RAW;
 
@@ -79,6 +80,18 @@ int16_t Gyro_X_RAW, Gyro_Y_RAW, Gyro_Z_RAW;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+	UNUSED(GPIO_Pin);
+	if (GPIO_Pin == GPIO_PIN_11) {
+		Accel_X_RAW = (int16_t)(Rec_Data[0] << 8 | Rec_Data [1]);
+		Accel_Y_RAW = (int16_t)(Rec_Data[2] << 8 | Rec_Data [3]);
+		Accel_Z_RAW = (int16_t)(Rec_Data[4] << 8 | Rec_Data [5]);
+		
+		Ax = Accel_X_RAW*100/16384.0;
+		Ay = Accel_Y_RAW*100/16384.0;
+		Az = Accel_Z_RAW*100/16384.0;
+	}
+}
 
 void AccelInnit(void) {
 	HAL_Delay(1000);
@@ -151,37 +164,14 @@ void AccelInnit(void) {
 	text_attr.origin_y = 0;
 };
 
-void MPU6050_Read_Accel (float* Ax, float* Ay, float* Az)
-{ // les données viennes en bytes, mais les valeur sont enregistrer en H-W
-	uint8_t Rec_Data[6];
-
+void MPU6050_Read_Accel (void)
+{
 	HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR, ACCEL_XOUT_H_REG, 1, Rec_Data, 6);
-	HAL_Delay(200);
-	
-	//Adding 2 BYTES into 16 bit integer 
-	Accel_X_RAW = (int16_t)(Rec_Data[0] << 8 | Rec_Data [1]);
-	Accel_Y_RAW = (int16_t)(Rec_Data[2] << 8 | Rec_Data [3]);
-	Accel_Z_RAW = (int16_t)(Rec_Data[4] << 8 | Rec_Data [5]);
-	
-	*Ax = Accel_X_RAW*100/16384.0;
-	*Ay = Accel_Y_RAW*100/16384.0;
-	*Az = Accel_Z_RAW*100/16384.0;
 }
 
-void MPU6050_Read_Gyro(float* Gx, float* Gy, float* Gz)
+void MPU6050_Read_Gyro(void)
 {
-    uint8_t Rec_Data[6];
     HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR, GYRO_XOUT_H_REG, 1, Rec_Data, 6);
-		HAL_Delay(200);
-
-    // Correctly assign raw data values for each axis
-    Gyro_X_RAW = (int16_t)(Rec_Data[0] << 8 | Rec_Data[1]);
-    Gyro_Y_RAW = (int16_t)(Rec_Data[2] << 8 | Rec_Data[3]);
-    Gyro_Z_RAW = (int16_t)(Rec_Data[4] << 8 | Rec_Data[5]);
-
-    *Gx = Gyro_X_RAW / 131.0;
-    *Gy = Gyro_Y_RAW / 131.0;
-    *Gz = Gyro_Z_RAW / 131.0;
 }
 
 /* USER CODE END PFP */
@@ -241,23 +231,24 @@ int main(void)
 		
 	ili9341_fill_screen(_screen, ILI9341_BLACK);
 	ili9341_text_attr_t text_attr = {&ili9341_font_11x18, ILI9341_WHITE, ILI9341_BLACK,0,0};
-
+	
+	HAL_TIM_Base_Start(&htim2);
+	AccelInnit();
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-	
-	HAL_TIM_Base_Start(&htim2);
-	AccelInnit();
   while (1)
   {
-		MPU6050_Read_Accel(&Ax, &Ay, &Az);
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+		MPU6050_Read_Accel();
 		char buf[100];
 		sprintf(buf,"x: %f\r\ny: %f\r\nz: %f", Ax, Ay, Az);
 		ili9341_draw_string(_screen, text_attr, buf);
-		};
-		
-  
+		HAL_Delay(500);
+  }
   /* USER CODE END 3 */
 }
 

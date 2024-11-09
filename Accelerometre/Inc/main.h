@@ -86,6 +86,9 @@ void Error_Handler(void);
 #define TCK_GPIO_Port GPIOA
 #define R3_Pin GPIO_PIN_10
 #define R3_GPIO_Port GPIOC
+#define GPIO_EXTI11_Pin GPIO_PIN_11
+#define GPIO_EXTI11_GPIO_Port GPIOC
+#define GPIO_EXTI11_EXTI_IRQn EXTI15_10_IRQn
 #define R4_Pin GPIO_PIN_12
 #define R4_GPIO_Port GPIOC
 #define SWO_Pin GPIO_PIN_3
