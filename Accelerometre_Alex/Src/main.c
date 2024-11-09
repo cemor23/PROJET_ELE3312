@@ -47,6 +47,16 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
+#define MPU6050_ADDR 0x68<<1
+#define WHO_AM_I_REG 0x75
+#define PWR_MGMT_1_REG 0x6B
+#define GYRO_CONFIG_REG 0x1B
+#define ACCEL_CONFIG_REG 0x1C
+#define CONFIG_REG 0x1A
+#define INT_ENABLE_REG 0x38
+#define ACCEL_XOUT_H_REG 0x3B
+#define GYRO_XOUT_H_REG 0x43
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -58,19 +68,121 @@
 
 /* USER CODE BEGIN PV */
 ili9341_t *_screen;
+float Ax;
+float Ay;
+float Az;
+int16_t Accel_X_RAW, Accel_Y_RAW, Accel_Z_RAW;
+int16_t Gyro_X_RAW, Gyro_Y_RAW, Gyro_Z_RAW;
 
-int accel_adress = 0x68<<1;
-uint8_t data[1];
-int PWR_MGMT_1 =107;
-int GYRO_CONFIG = 27;
-int ACCEL_CONFIG = 28;
-int CONFIG = 26;
-int INT_ENABLE = 56;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
+
+void AccelInnit(void) {
+	HAL_Delay(1000);
+	ili9341_text_attr_t text_attr = {&ili9341_font_11x18,ILI9341_WHITE,	ILI9341_BLACK,0,0};
+	
+	if (HAL_I2C_IsDeviceReady(&hi2c1, MPU6050_ADDR, 100, 1000)!=HAL_OK) {
+		char buf[80];
+		sprintf(buf,"Error: device not ready");
+		ili9341_draw_string(_screen, text_attr, buf);
+		HAL_Delay(1000);
+		NVIC_SystemReset();
+	} else {
+		char buf[80];
+		sprintf(buf,"device ready!");
+		ili9341_draw_string(_screen, text_attr, buf);
+	}
+	
+	uint8_t data;
+	HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR, WHO_AM_I_REG, 1, &data, 1) ;
+	HAL_Delay(1000);
+	if (data != 104) {
+		char buf[80];
+		sprintf(buf,"Error : WHO_AM_I\r\n %u", data);
+		text_attr.origin_y += 20;
+		ili9341_draw_string(_screen, text_attr, buf);
+	} else {
+		char buf[80];
+		sprintf(buf,"WHO_AM_I : OK!\r\n");
+		text_attr.origin_y += 20;
+		ili9341_draw_string(_screen, text_attr, buf);
+	}
+	
+	// RESET SLEEP MODE, SELECT INTERNAL CLOCK
+	data = 0;
+	HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, PWR_MGMT_1_REG, 1, &data, 1); 
+	char buf[80];
+	sprintf(buf,"PWR_MGMT_1 : OK!");
+	text_attr.origin_y += 20;
+	ili9341_draw_string(_screen, text_attr, buf);
+	
+	// FS_SEL = ±250°/s, DESACTIVER SELFTEST
+	data = 0;
+	HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, GYRO_CONFIG_REG, 1, &data, 1);
+	sprintf(buf,"GYRO_CONFIG : OK!");
+	text_attr.origin_y += 20;
+	ili9341_draw_string(_screen, text_attr, buf);
+
+	// AFS_SEL = ±2g, DESACTIVER SELFTEST
+	data = 0;
+	HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, ACCEL_CONFIG_REG, 1, &data, 1); 
+	sprintf(buf,"ACCEL_CONFIG : OK!");
+	text_attr.origin_y += 20;
+	ili9341_draw_string(_screen, text_attr, buf);
+	
+	// Bandwidth = 94
+	data = 2;
+	HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, CONFIG_REG, 1, &data, 1);
+	sprintf(buf,"CONFIG : OK!");
+	text_attr.origin_y += 20;
+	ili9341_draw_string(_screen, text_attr, buf);
+	
+	// DATA_RDY_EN = 1
+	data = 1;
+	HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, INT_ENABLE_REG, 1, &data, 1); 
+	sprintf(buf,"INT_ENABLE : OK!");
+	text_attr.origin_y += 20;
+	ili9341_draw_string(_screen, text_attr, buf);
+	HAL_Delay(3000);
+	ili9341_fill_screen(_screen, ILI9341_BLACK);
+	text_attr.origin_y = 0;
+};
+
+void MPU6050_Read_Accel (float* Ax, float* Ay, float* Az)
+{ // les données viennes en bytes, mais les valeur sont enregistrer en H-W
+	uint8_t Rec_Data[6];
+
+	HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR, ACCEL_XOUT_H_REG, 1, Rec_Data, 6);
+	HAL_Delay(200);
+	
+	//Adding 2 BYTES into 16 bit integer 
+	Accel_X_RAW = (int16_t)(Rec_Data[0] << 8 | Rec_Data [1]);
+	Accel_Y_RAW = (int16_t)(Rec_Data[2] << 8 | Rec_Data [3]);
+	Accel_Z_RAW = (int16_t)(Rec_Data[4] << 8 | Rec_Data [5]);
+	
+	*Ax = Accel_X_RAW*100/16384.0;
+	*Ay = Accel_Y_RAW*100/16384.0;
+	*Az = Accel_Z_RAW*100/16384.0;
+}
+
+void MPU6050_Read_Gyro(float* Gx, float* Gy, float* Gz)
+{
+    uint8_t Rec_Data[6];
+    HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR, GYRO_XOUT_H_REG, 1, Rec_Data, 6);
+		HAL_Delay(200);
+
+    // Correctly assign raw data values for each axis
+    Gyro_X_RAW = (int16_t)(Rec_Data[0] << 8 | Rec_Data[1]);
+    Gyro_Y_RAW = (int16_t)(Rec_Data[2] << 8 | Rec_Data[3]);
+    Gyro_Z_RAW = (int16_t)(Rec_Data[4] << 8 | Rec_Data[5]);
+
+    *Gx = Gyro_X_RAW / 131.0;
+    *Gy = Gyro_Y_RAW / 131.0;
+    *Gz = Gyro_Z_RAW / 131.0;
+}
 
 /* USER CODE END PFP */
 
@@ -135,61 +247,14 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	
-	//Experience 1
-	
-	//END Experience 1
-	
-	//Experience 2
-	
-
-
 	HAL_TIM_Base_Start(&htim2);
-	
-	if (HAL_I2C_IsDeviceReady(&hi2c1,accel_adress, 5,10)==HAL_OK) {
-		HAL_I2C_Mem_Read_DMA(&hi2c1, accel_adress, 0x75, 1,data,1) ;
-		data[0]=0;
-		HAL_I2C_Mem_Write_DMA(&hi2c1, accel_adress,PWR_MGMT_1,1,data,1); 
-		data[0]=0;
-		HAL_I2C_Mem_Write_DMA(&hi2c1, accel_adress,GYRO_CONFIG,1,data,1); 
-		data[0]=0;
-		HAL_I2C_Mem_Write_DMA(&hi2c1, accel_adress,ACCEL_CONFIG,1,data,1); 
-		data[0]=2;
-		HAL_I2C_Mem_Write_DMA(&hi2c1, accel_adress,CONFIG,1,data,1); 
-		data[0]=1;
-		HAL_I2C_Mem_Write_DMA(&hi2c1, accel_adress,INT_ENABLE,1,data,1); 
-
-		
-		ili9341_fill_screen(_screen, ILI9341_BLACK);
-		char buf[80];
-		sprintf(buf,"Min:%u\r\n", data[0]  );
-		ili9341_text_attr_t text_attr = {&ili9341_font_11x18,ILI9341_WHITE,
-		ILI9341_BLACK,40,0};
-		ili9341_draw_string(_screen, text_attr, buf);
-		;
-	};
-	//END Experience 2
-uint8_t temp_data ;
+	AccelInnit();
   while (1)
   {
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
-		//Experience 1
-
-		;
-		
-		
-		HAL_Delay(1000)
-	
-
-		
-
-			
-		
-
-
-
-;
+		MPU6050_Read_Accel(&Ax, &Ay, &Az);
+		char buf[100];
+		sprintf(buf,"x: %f\r\ny: %f\r\nz: %f", Ax, Ay, Az);
+		ili9341_draw_string(_screen, text_attr, buf);
 		};
 		
   
