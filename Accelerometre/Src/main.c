@@ -75,6 +75,9 @@ uint8_t Rec_Data[6];
 volatile int16_t Accel_X_RAW, Accel_Y_RAW, Accel_Z_RAW;
 volatile int16_t Gyro_X_RAW, Gyro_Y_RAW, Gyro_Z_RAW;
 char buf[100];
+HAL_StatusTypeDef status;
+uint8_t data;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -89,74 +92,117 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	}
 }
 
+
 void AccelInnit(void) {
-	HAL_Delay(1000);
 	ili9341_text_attr_t text_attr = {&ili9341_font_11x18,ILI9341_WHITE,	ILI9341_BLACK,0,0};
 	
-	if (HAL_I2C_IsDeviceReady(&hi2c1, MPU6050_ADDR, 100, 1000)!=HAL_OK) {
-		sprintf(buf,"Error: device not ready");
+	// HAL_I2C_IsDeviceReady
+	status = HAL_I2C_IsDeviceReady(&hi2c1, MPU6050_ADDR, 10, 100);
+	while (status!=HAL_OK){
+		status = HAL_I2C_IsDeviceReady(&hi2c1, MPU6050_ADDR, 1000, 1000);
+		if (status == HAL_BUSY) sprintf(buf,"I2C busy... %#04x", status);
+		else if (status == HAL_ERROR) sprintf(buf,"I2C Error... %#04x", status);
+		else sprintf(buf,"status: %#04x", status);
 		ili9341_draw_string(_screen, text_attr, buf);
-		HAL_Delay(1000);
-		NVIC_SystemReset();
-	} else {
-		char buf[80];
-		sprintf(buf,"device ready!");
-		ili9341_draw_string(_screen, text_attr, buf);
+		HAL_Delay(10);
 	}
 	
-	uint8_t data;
-	HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR, WHO_AM_I_REG, 1, &data, 1) ;
-	HAL_Delay(1000);
-	if (data != 104) {
-		char buf[80];
-		sprintf(buf,"Error : WHO_AM_I\r\n %u", data);
-		text_attr.origin_y += 20;
+	// WHO_AM_I
+	uint8_t data_WhoAmI;
+	status = HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR, WHO_AM_I_REG, 1, &data_WhoAmI, 1);
+	while	(status != HAL_OK) {
+		status = HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR, WHO_AM_I_REG, 1, &data_WhoAmI, 1);
+		sprintf(buf,"CHECKING ACCELEROMETER CONNECTION...");
+		text_attr.origin_y = 20;
 		ili9341_draw_string(_screen, text_attr, buf);
-	} else {
-		char buf[80];
-		sprintf(buf,"WHO_AM_I : OK!\r\n");
-		text_attr.origin_y += 20;
-		ili9341_draw_string(_screen, text_attr, buf);
-	}
+		HAL_Delay(10);
+	};
+	
+	sprintf(buf,"ACCELEROMETER CONNECTED!");
+	ili9341_draw_string(_screen, text_attr, buf);
+	
 	
 	// RESET SLEEP MODE, SELECT INTERNAL CLOCK
 	data = 0;
-	HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, PWR_MGMT_1_REG, 1, &data, 1); 
-	char buf[80];
-	sprintf(buf,"PWR_MGMT_1 : OK!");
-	text_attr.origin_y += 20;
+	status = HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, PWR_MGMT_1_REG, 1, &data, 1);
+	while (status != HAL_OK) {
+		status = HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, PWR_MGMT_1_REG, 1, &data, 1);
+		sprintf(buf,"WHO_AM_I...");
+		text_attr.origin_y = 20;
+		ili9341_draw_string(_screen, text_attr, buf);
+		HAL_Delay(10);
+	};
+	
+	sprintf(buf,"WHO_AM_I -> %u", data_WhoAmI);
+	text_attr.origin_y = 20;
 	ili9341_draw_string(_screen, text_attr, buf);
+	
 	
 	// FS_SEL = ±250°/s, DESACTIVER SELFTEST
 	data = 0;
-	HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, GYRO_CONFIG_REG, 1, &data, 1);
-	sprintf(buf,"GYRO_CONFIG : OK!");
-	text_attr.origin_y += 20;
+	status = HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, GYRO_CONFIG_REG, 1, &data, 1);
+	while (status != HAL_OK) {
+		status = HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, GYRO_CONFIG_REG, 1, &data, 1);
+		sprintf(buf,"PWR_MGMT_1...");
+		text_attr.origin_y = 40;
+		ili9341_draw_string(_screen, text_attr, buf);
+		HAL_Delay(10);
+	}; 
+	sprintf(buf,"PWR_MGMT_1 : OK!");
+	text_attr.origin_y = 40;
 	ili9341_draw_string(_screen, text_attr, buf);
 
 	// AFS_SEL = ±2g, DESACTIVER SELFTEST
 	data = 0;
-	HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, ACCEL_CONFIG_REG, 1, &data, 1); 
-	sprintf(buf,"ACCEL_CONFIG : OK!");
-	text_attr.origin_y += 20;
+	status = HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, ACCEL_CONFIG_REG, 1, &data, 1);
+	while (status != HAL_OK) {
+		status = HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, ACCEL_CONFIG_REG, 1, &data, 1);
+		sprintf(buf,"GYRO_CONFIG...");
+		text_attr.origin_y = 60;
+		ili9341_draw_string(_screen, text_attr, buf);
+		HAL_Delay(10);
+	}; 
+	sprintf(buf,"GYRO_CONFIG : OK!");
+	text_attr.origin_y = 60;
 	ili9341_draw_string(_screen, text_attr, buf);
 	
 	// Bandwidth = 94
 	data = 2;
-	HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, CONFIG_REG, 1, &data, 1);
-	sprintf(buf,"CONFIG : OK!");
-	text_attr.origin_y += 20;
+	status = HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, CONFIG_REG, 1, &data, 1);
+	while (status != HAL_OK) {
+		status = HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, CONFIG_REG, 1, &data, 1);
+		sprintf(buf,"ACCEL_CONFIG...");
+		text_attr.origin_y = 80;
+		ili9341_draw_string(_screen, text_attr, buf);
+		HAL_Delay(10);
+	};
+	sprintf(buf,"ACCEL_CONFIG : OK!");
+	text_attr.origin_y = 80;
 	ili9341_draw_string(_screen, text_attr, buf);
 	
 	// DATA_RDY_EN = 1
 	data = 1;
-	HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, INT_ENABLE_REG, 1, &data, 1); 
-	sprintf(buf,"INT_ENABLE : OK!");
-	text_attr.origin_y += 20;
+	status = HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, INT_ENABLE_REG, 1, &data, 1);
+	while (status != HAL_OK) {
+		status = HAL_I2C_Mem_Write_DMA(&hi2c1, MPU6050_ADDR, INT_ENABLE_REG, 1, &data, 1);
+		sprintf(buf,"CONFIG...");
+		text_attr.origin_y = 100;
+		ili9341_draw_string(_screen, text_attr, buf);
+		HAL_Delay(10);
+	}; 
+	sprintf(buf,"CONFIG : OK!");
+	text_attr.origin_y = 100;
 	ili9341_draw_string(_screen, text_attr, buf);
-	HAL_Delay(3000);
+	
+	
+	sprintf(buf,"INT_ENABLE : OK!");
+	text_attr.origin_y = 120;
+	ili9341_draw_string(_screen, text_attr, buf);
+	
+	HAL_Delay(2000);
 	ili9341_fill_screen(_screen, ILI9341_BLACK);
 	text_attr.origin_y = 0;
+	
 };
 
 void MPU6050_Read_Accel (void)
@@ -201,7 +247,6 @@ int main(void)
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
-
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
@@ -210,6 +255,11 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM2_Init();
   MX_DAC_Init();
+  MX_I2C1_Init();
+	HAL_I2C_DeInit(&hi2c1);
+	__HAL_I2C_CLEAR_FLAG(&hi2c1, I2C_FLAG_BERR);  // Bus error
+	__HAL_I2C_CLEAR_FLAG(&hi2c1, I2C_FLAG_ARLO);  // Arbitration lost
+	__HAL_I2C_CLEAR_FLAG(&hi2c1, I2C_FLAG_OVR);   // Overrun/Underrun error
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 	_screen = ili9341_new(
@@ -229,6 +279,7 @@ int main(void)
 	HAL_TIM_Base_Start(&htim2);
 	AccelInnit();
 	tag_started = 1;
+	
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -239,7 +290,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 		MPU6050_Read_Accel();
-		sprintf(buf,"x: %f\r\ny: %f\r\nz: %f", Ax, Ay, Az);
+		sprintf(buf,"x: %f g\r\ny: %f g\r\nz: %f g", Ax, Ay, Az);
 		ili9341_draw_string(_screen, text_attr, buf);
 		HAL_Delay(100);
   }

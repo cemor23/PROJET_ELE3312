@@ -3264,7 +3264,7 @@ HAL_StatusTypeDef HAL_I2C_Mem_Read_DMA(I2C_HandleTypeDef *hi2c, uint16_t DevAddr
 
     /* Process Locked */
     __HAL_LOCK(hi2c);
-
+	
     /* Check if the I2C is already enabled */
     if ((hi2c->Instance->CR1 & I2C_CR1_PE) != I2C_CR1_PE)
     {
