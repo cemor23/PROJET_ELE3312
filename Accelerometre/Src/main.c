@@ -291,8 +291,10 @@ int main(void)
     /* USER CODE BEGIN 3 */
 		MPU6050_Read_Accel();
 		sprintf(buf,"x: %f g\r\ny: %f g\r\nz: %f g", Ax, Ay, Az);
+		printf(buf,"x: %f g\r\ny: %f g\r\nz: %f g", Ax, Ay, Az);
 		ili9341_draw_string(_screen, text_attr, buf);
 		HAL_Delay(100);
+		printf("\033\143");
   }
   /* USER CODE END 3 */
 }
