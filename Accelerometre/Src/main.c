@@ -74,6 +74,8 @@ volatile int tag_started = 0;
 uint8_t Rec_Data[6];
 volatile int16_t Accel_X_RAW, Accel_Y_RAW, Accel_Z_RAW;
 volatile int16_t Gyro_X_RAW, Gyro_Y_RAW, Gyro_Z_RAW;
+volatile int flagPIN11 = 1;
+volatile int flag_done = 1;
 char buf[100];
 HAL_StatusTypeDef status;
 uint8_t data;
@@ -86,12 +88,23 @@ void SystemClock_Config(void);
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	UNUSED(GPIO_Pin);
 	if ((GPIO_Pin == GPIO_PIN_11) & tag_started) {
-		Accel_X_RAW = (int16_t)(Rec_Data[0] << 8 | Rec_Data [1]);
-		Accel_Y_RAW = (int16_t)(Rec_Data[2] << 8 | Rec_Data [3]);
-		Accel_Z_RAW = (int16_t)(Rec_Data[4] << 8 | Rec_Data [5]);
+		flagPIN11 = 1;
 	}
 }
 
+void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
+	UNUSED(hi2c);
+	if (hi2c->Instance == I2C1) {
+		flag_done = 1;
+		
+		Accel_X_RAW = (int16_t)(Rec_Data[0] << 8 | Rec_Data [1]);
+		Accel_Y_RAW = (int16_t)(Rec_Data[2] << 8 | Rec_Data [3]);
+		Accel_Z_RAW = (int16_t)(Rec_Data[4] << 8 | Rec_Data [5]);
+		Ax = Accel_X_RAW*100/16384.0;
+		Ay = Accel_Y_RAW*100/16384.0;
+		Az = Accel_Z_RAW*100/16384.0;
+	}
+}
 
 void AccelInnit(void) {
 	ili9341_text_attr_t text_attr = {&ili9341_font_11x18,ILI9341_WHITE,	ILI9341_BLACK,0,0};
@@ -205,14 +218,7 @@ void AccelInnit(void) {
 	
 };
 
-void MPU6050_Read_Accel (void)
-{
-	HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR, ACCEL_XOUT_H_REG, 1, Rec_Data, 6);
-	
-	Ax = Accel_X_RAW*100/16384.0;
-	Ay = Accel_Y_RAW*100/16384.0;
-	Az = Accel_Z_RAW*100/16384.0;
-}
+
 
 /* USER CODE END PFP */
 
@@ -287,14 +293,17 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
-		MPU6050_Read_Accel();
+		if (flagPIN11 & flag_done) {
+			flagPIN11 = 0;
+			flag_done = 0;
+			HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR, ACCEL_XOUT_H_REG, 1, Rec_Data, 6);
+		}
+		printf("\033\143");
 		sprintf(buf,"x: %f g\r\ny: %f g\r\nz: %f g", Ax, Ay, Az);
 		printf(buf,"x: %f g\r\ny: %f g\r\nz: %f g", Ax, Ay, Az);
 		ili9341_draw_string(_screen, text_attr, buf);
 		HAL_Delay(100);
-		printf("\033\143");
   }
   /* USER CODE END 3 */
 }
