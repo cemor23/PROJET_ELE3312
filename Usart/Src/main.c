@@ -47,14 +47,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define MPU6050_ADDR 0x68<<1
-#define WHO_AM_I_REG 0x75
-#define PWR_MGMT_1_REG 0x6B
-#define GYRO_CONFIG_REG 0x1B
-#define ACCEL_CONFIG_REG 0x1C
-#define CONFIG_REG 0x1A
-#define INT_ENABLE_REG 0x38
-#define ACCEL_XOUT_H_REG 0x3B
+#define UART_BUFFER_SIZE 10
 
 /* USER CODE END PD */
 
@@ -67,21 +60,18 @@
 
 /* USER CODE BEGIN PV */
 ili9341_t *_screen;
-float Ax;
-float Ay;
-float Az;
-volatile int tag_started = 0;
-uint8_t Rec_Data[6];
-volatile int16_t Accel_X_RAW, Accel_Y_RAW, Accel_Z_RAW;
-volatile int16_t Gyro_X_RAW, Gyro_Y_RAW, Gyro_Z_RAW;
-char buf[100];
-HAL_StatusTypeDef status;
 uint8_t data;
-uint8_t temp;
+uint8_t RxData_temp;
 volatile int state =0;
-int buffer_i = 0;
-#define BUFFER_SIZE 10
-char  buffer[BUFFER_SIZE];
+int RxData_i = 0;
+char RxData[UART_BUFFER_SIZE];
+union TxDataUnion {
+    struct {
+        char FFByte, xpos, ypos, etcVar;
+    } TxDataStruct;
+    char TxDataArray[UART_BUFFER_SIZE];
+} TxData;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -150,10 +140,10 @@ int main(void)
 	ili9341_text_attr_t text_attr = {&ili9341_font_11x18, ILI9341_WHITE, ILI9341_BLACK,0,0};
 	
 	HAL_TIM_Base_Start(&htim2);
-	tag_started = 1;
 	
-	HAL_UART_Receive_IT(&huart5, &temp, 1);
-	
+	TxData.TxDataStruct.FFByte = 0xFF;
+	HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE, HAL_MAX_DELAY);
+	HAL_UART_Receive_IT(&huart5, &RxData_temp, 1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -225,26 +215,31 @@ int fputc(int ch, FILE *f)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 
-if (huart == &huart5){
-	if (state == 0){
-		if (temp == 0xFF) 
-		{state = 1;}
-	}
-	else if (state ==1){
-		if (temp <= BUFFER_SIZE) {state = 2;}
-		else {state = 0;}}
-	else {
-		buffer[buffer_i]= temp;
-		buffer_i++;
-		if (buffer_i>=BUFFER_SIZE){ 
-			buffer_i = 0;
-			state = 0;
+	if (huart == &huart5){
+		if (state == 0){
+			if (RxData_temp == 0xFF) state = 1;
 		}
+		else if (state ==1){
+			if (RxData_temp <= UART_BUFFER_SIZE) state = 2;
+			else state = 0;
+		}
+		else {
+			RxData[RxData_i] = RxData_temp;
+			RxData_i++;
+			if (RxData_i>=UART_BUFFER_SIZE){ 
+				RxData_i = 0;
+				state = 0;
+			}
+		}
+		HAL_UART_Receive_IT(&huart5, &RxData_temp, 1);
 	}
-	HAL_UART_Receive_IT(&huart5, &temp, 1);
 }
 
-
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if (huart == &huart5){
+		HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE, HAL_MAX_DELAY);
+	}
 }
 
 /* USER CODE END 4 */
