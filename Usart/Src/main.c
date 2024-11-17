@@ -60,11 +60,12 @@
 
 /* USER CODE BEGIN PV */
 ili9341_t *_screen;
-uint8_t data;
+
 uint8_t RxData_temp;
 volatile int state =0;
 int RxData_i = 0;
 char RxData[UART_BUFFER_SIZE];
+
 union TxDataUnion {
     struct {
         char FFByte, xpos, ypos, etcVar;
