@@ -47,7 +47,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define UART_BUFFER_SIZE 10
+#define UART_BUFFER_SIZE 4
 
 /* USER CODE END PD */
 
@@ -68,7 +68,7 @@ char RxData[UART_BUFFER_SIZE];
 
 union TxDataUnion {
     struct {
-        char FFByte, xpos, ypos, etcVar;
+        char FFByte, sizeByte, xpos, ypos, etcVar;
     } TxDataStruct;
     char TxDataArray[UART_BUFFER_SIZE];
 } TxData;
@@ -143,7 +143,8 @@ int main(void)
 	HAL_TIM_Base_Start(&htim2);
 	
 	TxData.TxDataStruct.FFByte = 0xFF;
-	HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE, HAL_MAX_DELAY);
+	TxData.TxDataStruct.sizeByte = UART_BUFFER_SIZE;
+	HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
 	HAL_UART_Receive_IT(&huart5, &RxData_temp, 1);
   /* USER CODE END 2 */
 
@@ -154,6 +155,9 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+		printf("%i\r\n", RxData[0]);
+		printf("%i\r\b\r", (char) HAL_GetTick());
+		HAL_Delay(200);
   }
   /* USER CODE END 3 */
 }
@@ -239,7 +243,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if (huart == &huart5){
-		HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE, HAL_MAX_DELAY);
+		TxData.TxDataStruct.xpos = HAL_GetTick();		
+		HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
 	}
 }
 
