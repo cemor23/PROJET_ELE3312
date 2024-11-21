@@ -300,54 +300,42 @@ void HAL_DelayMicroseconds(uint32_t us) {
 }
 
 
-void trigger (void)
-{
-	
-HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-HAL_DelayMicroseconds(10);
-HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-
+void trigger (void) {
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+	HAL_DelayMicroseconds(10);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
 }
 	
 	
 
-void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
-{
-    // Vérifie que l'interruption vient du bon canal
-    if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
-    {
-			
-			
-			
-			
-			
-        if (is_first_capture == 0)
-        {
-            // Capture du front montant
-            ic_val1 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1); // Lit la première valeur de capture
-            is_first_capture = 1;                                     // Marque que le front montant a été capturé
-        }
-        else if (is_first_capture == 1)
-        {
-            // Capture du front descendant
-            ic_val2 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1); // Lit la seconde valeur de capture
-            __HAL_TIM_SET_COUNTER(htim, 0);                           // Réinitialise le compteur pour la prochaine mesure
+void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
+	// Vérifie que l'interruption vient du bon canal
+	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
 
-            // Calcul de la durée d'impulsion
-            uint32_t diff = (ic_val2 > ic_val1) ? (ic_val2 - ic_val1) : ((0xFFFF - ic_val1) + ic_val2 + 1);
-            distance = (float)(diff * 0.0343) / 2; // Convertit la durée en distance (en cm)
-						
-						
-            is_first_capture = 0; // Réinitialise pour la prochaine mesure
-        }
-    }
+		if (is_first_capture == 0) {
+			// Capture du front montant
+			ic_val1 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1); // Lit la première valeur de capture
+			is_first_capture = 1;                                     // Marque que le front montant a été capturé
+		}
+		else if (is_first_capture == 1) {
+			// Capture du front descendant
+			ic_val2 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1); // Lit la seconde valeur de capture
+			__HAL_TIM_SET_COUNTER(htim, 0);                           // Réinitialise le compteur pour la prochaine mesure
+
+			// Calcul de la durée d'impulsion
+			uint32_t diff = (ic_val2 > ic_val1) ? (ic_val2 - ic_val1) : ((0xFFFF - ic_val1) + ic_val2 + 1);
+			distance = (float)(diff * 0.0343) / 2; // Convertit la durée en distance (en cm)
+			
+			
+			is_first_capture = 0; // Réinitialise pour la prochaine mesure
+		}
+	}
 }
 
-void HAL_SYSTICK_Callback(void)
-{
-if	(timerMesure++ ==100)
-{timerMesure=0;
-flagMesure = 1;}
+void HAL_SYSTICK_Callback(void) {
+	if	(timerMesure++ ==100)
+	{timerMesure=0;
+	flagMesure = 1;}
 }
 
 void JouerNote(float dist) {
@@ -483,13 +471,13 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-//son
-if (!(CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk)) {
-        CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;  // Enable DWT
-    }
-    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;  // Enable the cycle counter
-    DWT->CYCCNT = 0;  // Reset the cycle counter
-//son
+	//son
+	if (!(CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk)) {
+					CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;  // Enable DWT
+			}
+			DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;  // Enable the cycle counter
+			DWT->CYCCNT = 0;  // Reset the cycle counter
+	//son
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -501,7 +489,6 @@ if (!(CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk)) {
   MX_UART5_Init();
   MX_DAC_Init();
   MX_TIM2_Init();
-	//MX_TIM4_init();
   MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
 	
@@ -533,7 +520,7 @@ if (!(CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk)) {
 	HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, tab_value0,TABLE_LENGTH, DAC_ALIGN_12B_R);
 	//son
 	//accelerometre
-	HAL_TIM_Base_Start(&htim2);
+	
 	AccelInnit();
 	tag_started = 1;
 	//accelerometre
@@ -556,20 +543,24 @@ if (!(CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk)) {
 	/* Infinite loop */
   while (1)
   {
-		
+		//uart
 		//HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
+		//uart
 		
 		//son
+		
+		while(1){
 		trigger();
-	if(flagMesure ==1) {
-	char buffer[20] = {0};	
-		sprintf(buffer,"%f", distance);
-		JouerNote(distance);
-		ili9341_text_attr_t time_attr = {&ili9341_font_11x18,
-		ILI9341_WHITE, ILI9341_BLACK,0,0};
-		ili9341_draw_string(_screen, time_attr,buffer);
-		flagMesure=0;
-	}
+	//if(flagMesure ==1) {
+		char buffer[20] = {0};	
+			sprintf(buffer,"%f", distance);
+			JouerNote(distance);
+			ili9341_text_attr_t time_attr = {&ili9341_font_11x18,
+			ILI9341_WHITE, ILI9341_BLACK,0,0};
+			ili9341_draw_string(_screen, time_attr,buffer);
+			flagMesure=0;
+	//}
+		}
 		//son
 		
 		
