@@ -521,7 +521,7 @@ int main(void)
 	//son
 	//accelerometre
 	
-	AccelInnit();
+	//AccelInnit();
 	tag_started = 1;
 	//accelerometre
 	//uart
