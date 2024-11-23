@@ -551,7 +551,7 @@ int main(void)
 		
 		while(1){
 		trigger();
-	//if(flagMesure ==1) {
+	if(flagMesure ==1) {
 		char buffer[20] = {0};	
 			sprintf(buffer,"%f", distance);
 			JouerNote(distance);
@@ -559,7 +559,7 @@ int main(void)
 			ILI9341_WHITE, ILI9341_BLACK,0,0};
 			ili9341_draw_string(_screen, time_attr,buffer);
 			flagMesure=0;
-	//}
+	}
 		}
 		//son
 		
