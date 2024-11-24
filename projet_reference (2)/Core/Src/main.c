@@ -47,7 +47,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-//accelerometre
+// accelerometre
 #define MPU6050_ADDR 0x68<<1
 #define WHO_AM_I_REG 0x75
 #define PWR_MGMT_1_REG 0x6B
@@ -56,14 +56,16 @@
 #define CONFIG_REG 0x1A
 #define INT_ENABLE_REG 0x38
 #define ACCEL_XOUT_H_REG 0x3B
-//accelerometre
-//uart
+// accelerometre
+
+// uart
 #define UART_BUFFER_SIZE 4
-//uart
-//son
+// uart
+
+// son
 #define pi 3.14
 #define TABLE_LENGTH 1000
-//son
+// son
 
 /* USER CODE END PD */
 
@@ -89,21 +91,20 @@ volatile int flag_done = 1;
 char buf[100];
 HAL_StatusTypeDef status;
 uint8_t data;
-//accelerometre
+// accelerometre
 
-//uart
+// uart
 uint8_t RxData_temp;
 volatile int state =0;
 int RxData_i = 0;
 char RxData[UART_BUFFER_SIZE];
-
 union TxDataUnion {
-    struct {
-        char FFByte, sizeByte, xpos, ypos, etcVar;
-    } TxDataStruct;
-    char TxDataArray[UART_BUFFER_SIZE];
+	struct {
+		char FFByte, sizeByte, xpos, ypos, etcVar;
+	} TxDataStruct;
+	char TxDataArray[UART_BUFFER_SIZE];
 } TxData;
-//uart
+// uart
 
 //son
 uint32_t tab_value0[TABLE_LENGTH];
@@ -117,11 +118,7 @@ volatile char flagMesure =0;
 volatile float value;
 volatile int flag_tableau =0;
 enum note {B3,C4,D4,D4s,E4,F4s,G4,A4,B4,C5,D5,D5s,E5,F5s,G5};
-//
-
-
-
-
+// son
 
 
 ili9341_t *_screen;
@@ -132,7 +129,7 @@ player_t players[NUM_PLAYERS] = {0};
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 
-//accelerometre
+// accelerometre
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	UNUSED(GPIO_Pin);
 	if ((GPIO_Pin == GPIO_PIN_11) & tag_started) {
@@ -265,11 +262,10 @@ void AccelInnit(void) {
 	text_attr.origin_y = 0;
 	
 };
-//accelerometre
+// accelerometre
 
-//uart
+// uart
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
-
 	if (huart == &huart5){
 		if (state == 0){
 			if (RxData_temp == 0xFF) state = 1;
@@ -289,29 +285,25 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 		HAL_UART_Receive_IT(&huart5, &RxData_temp, 1);
 	}
 }
-//uart
+// uart
 
 //son
 void HAL_DelayMicroseconds(uint32_t us) {
-    uint32_t start = DWT->CYCCNT;  // Current cycle count
-    uint32_t ticks = (HAL_RCC_GetHCLKFreq() / 1000000) * us;  // Cycles for 'us' microseconds
+	uint32_t start = DWT->CYCCNT;  // Current cycle count
+	uint32_t ticks = (HAL_RCC_GetHCLKFreq() / 1000000) * us;  // Cycles for 'us' microseconds
 
-    while ((DWT->CYCCNT - start) < ticks);  // Wait until the elapsed cycles reach the target
+	while ((DWT->CYCCNT - start) < ticks);  // Wait until the elapsed cycles reach the target
 }
-
 
 void trigger (void) {
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
 	HAL_DelayMicroseconds(10);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
 }
-	
-	
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	// Vérifie que l'interruption vient du bon canal
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
-
 		if (is_first_capture == 0) {
 			// Capture du front montant
 			ic_val1 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1); // Lit la première valeur de capture
@@ -326,7 +318,6 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 			uint32_t diff = (ic_val2 > ic_val1) ? (ic_val2 - ic_val1) : ((0xFFFF - ic_val1) + ic_val2 + 1);
 			distance = (float)(diff * 0.0343) / 2; // Convertit la durée en distance (en cm)
 			
-			
 			is_first_capture = 0; // Réinitialise pour la prochaine mesure
 		}
 	}
@@ -339,105 +330,97 @@ void HAL_SYSTICK_Callback(void) {
 }
 
 void JouerNote(float dist) {
-	
-
-	
 	int note = 0;
 	
-if (3<dist && dist<=6){
-	note = (int)(40000/789.99f);
-}
+	if (3<dist && dist<=6) {
+		note = (int)(40000/789.99f);
+	}
 
-else if (6<dist && dist<=9){
-	note = (int)(40000/698.46f);
-}
+	else if (6<dist && dist<=9) {
+		note = (int)(40000/698.46f);
+	}
 
-else if (9<dist && dist<=12){
-	note = (int)(40000/659.26f);
-}
+	else if (9<dist && dist<=12) {
+		note = (int)(40000/659.26f);
+	}
 
-else if (12<dist && dist<=15){
-	note = (int)(40000/622.25f);
-}
+	else if (12<dist && dist<=15) {
+		note = (int)(40000/622.25f);
+	}
 
-else if (15<dist && dist<=18){
-	note = (int)(40000/587.33f);
-}
+	else if (15<dist && dist<=18) {
+		note = (int)(40000/587.33f);
+	}
 
-else if (18<dist && dist<=21){
-	note = (int)(40000/523.25f);
-}
+	else if (18<dist && dist<=21) {
+		note = (int)(40000/523.25f);
+	}
 
-else if (21<dist && dist<=24){
-	note = (int)(40000/493.88f);
-}
+	else if (21<dist && dist<=24) {
+		note = (int)(40000/493.88f);
+	}
 
-else if (24<dist && dist<=27){
-	note = (int)(40000/440.0f);
-}
+	else if (24<dist && dist<=27) {
+		note = (int)(40000/440.0f);
+	}
 
-else if (27<dist && dist<=30){
-	note = (int)(40000/392.00f);
-}
+	else if (27<dist && dist<=30) {
+		note = (int)(40000/392.00f);
+	}
 
-else if (30<dist && dist<=33){
-	note = (int)(40000/369.99f);
-}
+	else if (30<dist && dist<=33) {
+		note = (int)(40000/369.99f);
+	}
 
-else if (33<dist && dist<=36){
-	note = (int)(40000/329.63f);
-}
+	else if (33<dist && dist<=36) {
+		note = (int)(40000/329.63f);
+	}
 
-else if (36<dist && dist<=39){
-	note = (int)(40000/311.13f);
-}
+	else if (36<dist && dist<=39) {
+		note = (int)(40000/311.13f);
+	}
 
-else if (39<dist && dist<=42){
-	note = (int)(40000/293.66f);
-}
+	else if (39<dist && dist<=42) {
+		note = (int)(40000/293.66f);
+	}
 
-else if (42<dist && dist<=45){
-	note = (int)(40000/261.63f);
-}
+	else if (42<dist && dist<=45) {
+		note = (int)(40000/261.63f);
+	}
 
-else if (45<dist){
-	note = (int)(40000/246.94f);
-}
+	else if (45<dist) {
+		note = (int)(40000/246.94f);
+	}
 
-if (flag_tableau == 0){		
-    for (int i = 0; i<TABLE_LENGTH; i++) {
-        if(i% note < (note / 2))
-				{
-            value = 4000;
-            tab_value0[i]= value;
-        }
-
-        else{
-            value = 0;
-            tab_value0[i]=value;
-        }
-
-}		
-
-if (flag_tableau == 1){
-    for (int i = 0; i<TABLE_LENGTH; i++) {
-        if(i% note < (note / 2))
-				{
-            value = 4000;
-            tab_value1[i]=value;
-        }
-
-        else{
-            value = 0;
-            tab_value1[i]=value;
-        }
+	if (flag_tableau == 0) {		
+		for (int i = 0; i<TABLE_LENGTH; i++) {
+			if(i% note < (note / 2)) {
+				value = 4000;
+				tab_value0[i]= value;
 			}
-    }
+
+			else {
+				value = 0;
+				tab_value0[i]=value;
+			}
+		}		
+	}
+	else {
+		for (int i = 0; i<TABLE_LENGTH; i++) {
+			if(i% note < (note / 2)) {
+				value = 4000;
+				tab_value1[i]=value;
+			}
+			else{
+				value = 0;
+				tab_value1[i]=value;
+			}
+		}
 	}
 }
-
-
 //son
+
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -462,22 +445,28 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-	HAL_Delay(500);
-	/* Default players setting */
-	static game_state_t game_state = CHOOSE_PLAYER;
+	
+	// accelerometre
+  HAL_Delay(500);
+	// accelerometre
+	
+  /* Default players setting */
+  static game_state_t game_state = CHOOSE_PLAYER;
   /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-	//son
-	if (!(CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk)) {
-					CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;  // Enable DWT
-			}
-			DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;  // Enable the cycle counter
-			DWT->CYCCNT = 0;  // Reset the cycle counter
-	//son
+	
+  //son
+  if (!(CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk)) {
+	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;  // Enable DWT
+  }
+  DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;  // Enable the cycle counter
+  DWT->CYCCNT = 0;  // Reset the cycle counter
+  // son
+	
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -494,36 +483,37 @@ int main(void)
 	
 	// Initialize the screen
 	_screen = ili9341_new(
-		  &hspi1,
-		  Void_Display_Reset_GPIO_Port, Void_Display_Reset_Pin,
-		  TFT_CS_GPIO_Port, TFT_CS_Pin,
-		  TFT_DC_GPIO_Port, TFT_DC_Pin,
-		  isoLandscapeFlip,
-		  NULL, NULL,
-		  NULL, NULL,
-		  itsNotSupported,
-		  itnNormalized);
+		&hspi1,
+		Void_Display_Reset_GPIO_Port, Void_Display_Reset_Pin,
+		TFT_CS_GPIO_Port, TFT_CS_Pin,
+		TFT_DC_GPIO_Port, TFT_DC_Pin,
+		isoLandscapeFlip,
+		NULL, NULL,
+		NULL, NULL,
+		itsNotSupported,
+		itnNormalized
+	);
 	char text[40];
 	ili9341_text_attr_t text_attr = {&ili9341_font_11x18,  ILI9341_WHITE, ILI9341_BLACK, 10, 0};
 	ili9341_fill_screen(_screen, ILI9341_BLACK);
 	
-	//son
+	// son
 	HAL_TIM_Base_Start(&htim2);
 	HAL_TIM_Base_Start(&htim5);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
-	for (int i=0;i<TABLE_LENGTH;i++) 
-		{
-				value = 0;
-				tab_value0[i]=(int) value;
-		}
+	for (int i=0;i<TABLE_LENGTH;i++) {
+		value = 0;
+		tab_value0[i]=(int) value;
+	}
 	
 	HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, tab_value0,TABLE_LENGTH, DAC_ALIGN_12B_R);
-	//son
-	//accelerometre
+	// son
 	
+	//accelerometre
 	//AccelInnit();
 	tag_started = 1;
 	//accelerometre
+	
 	//uart
 	TxData.TxDataStruct.FFByte = 0xFF;
 	TxData.TxDataStruct.sizeByte = UART_BUFFER_SIZE;
@@ -543,46 +533,39 @@ int main(void)
 	/* Infinite loop */
   while (1)
   {
-		//uart
+		// uart
 		//HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
-		//uart
+		// uart
 		
-		//son
-		
-		while(1){
-		trigger();
-	if(flagMesure ==1) {
-		char buffer[20] = {0};	
-			sprintf(buffer,"%f", distance);
-			JouerNote(distance);
-			ili9341_text_attr_t time_attr = {&ili9341_font_11x18,
-			ILI9341_WHITE, ILI9341_BLACK,0,0};
-			ili9341_draw_string(_screen, time_attr,buffer);
-			flagMesure=0;
-	}
+		// son	
+		while(1) {
+			trigger();
+			if(flagMesure ==1) {
+				char buffer[20] = {0};	
+					sprintf(buffer,"%f", distance);
+					JouerNote(distance);
+					ili9341_text_attr_t time_attr = {&ili9341_font_11x18,
+					ILI9341_WHITE, ILI9341_BLACK,0,0};
+					ili9341_draw_string(_screen, time_attr,buffer);
+					flagMesure=0;
+			}
 		}
-		//son
-		
-		
-		
+		// son
 		
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 		
-		//accelerometre
+		// accelerometre
 		if (flagPIN11 & flag_done) {
 			flagPIN11 = 0;
 			flag_done = 0;
 			HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR, ACCEL_XOUT_H_REG, 1, Rec_Data, 6);
 		}
-		//accelerometre
+		// accelerometre
 		
 		
-		
-		
-		
-		HAL_Delay(20); // � remplacer avec un timer
+		HAL_Delay(20); // a remplacer avec un timer
 		
 		switch(game_state) {
 		case CHOOSE_PLAYER:
@@ -677,12 +660,9 @@ void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef* hdac) {
 // Ici on alterne entre les deux tableaux.
 	if (flag_tableau == 0) {
 		HAL_DAC_Start_DMA(hdac, DAC_CHANNEL_1, tab_value0, TABLE_LENGTH, DAC_ALIGN_12B_R);
-		
-					
-	} else {
+	}
+	else {
 		HAL_DAC_Start_DMA(hdac, DAC_CHANNEL_1, tab_value1, TABLE_LENGTH, DAC_ALIGN_12B_R);
-	   
-					
 	}
 }
 /* USER CODE END 4 */
