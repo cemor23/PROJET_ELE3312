@@ -47,25 +47,6 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-// accelerometre
-#define MPU6050_ADDR 0x68<<1
-#define WHO_AM_I_REG 0x75
-#define PWR_MGMT_1_REG 0x6B
-#define GYRO_CONFIG_REG 0x1B
-#define ACCEL_CONFIG_REG 0x1C
-#define CONFIG_REG 0x1A
-#define INT_ENABLE_REG 0x38
-#define ACCEL_XOUT_H_REG 0x3B
-// accelerometre
-
-// uart
-#define UART_BUFFER_SIZE 4
-// uart
-
-// son
-#define pi 3.14
-#define TABLE_LENGTH 1000
-// son
 
 /* USER CODE END PD */
 
@@ -77,7 +58,6 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
 // accelerometre
 float Ax;
 float Ay;
@@ -86,8 +66,8 @@ volatile int tag_started = 0;
 uint8_t Rec_Data[6];
 volatile int16_t Accel_X_RAW, Accel_Y_RAW, Accel_Z_RAW;
 volatile int16_t Gyro_X_RAW, Gyro_Y_RAW, Gyro_Z_RAW;
-volatile int flagPIN11 = 1;
-volatile int flag_done = 1;
+volatile char flag_exti = 1;
+volatile char flag_i2c = 1;
 char buf[100];
 HAL_StatusTypeDef status;
 uint8_t data;
@@ -97,13 +77,8 @@ uint8_t data;
 uint8_t RxData_temp;
 volatile int state =0;
 int RxData_i = 0;
-char RxData[UART_BUFFER_SIZE];
-union TxDataUnion {
-	struct {
-		char FFByte, sizeByte, xpos, ypos, etcVar;
-	} TxDataStruct;
-	char TxDataArray[UART_BUFFER_SIZE];
-} TxData;
+RxDataUnion RxData;
+TxDataUnion TxData;
 // uart
 
 //son
@@ -112,14 +87,12 @@ uint32_t tab_value1[TABLE_LENGTH];
 volatile uint32_t ic_val1 = 0;
 volatile uint32_t ic_val2 = 0;
 volatile uint8_t is_first_capture = 0; // Drapeau pour savoir quel front est capturé
-volatile float distance = 0.0;
+volatile int distance = 0.0;
 volatile int timerMesure = 0;
-volatile char flagMesure =0;
+volatile int flagMesure =0;
 volatile float value;
 volatile int flag_tableau =0;
-enum note {B3,C4,D4,D4s,E4,F4s,G4,A4,B4,C5,D5,D5s,E5,F5s,G5};
 // son
-
 
 ili9341_t *_screen;
 player_t players[NUM_PLAYERS] = {0};
@@ -133,15 +106,13 @@ void SystemClock_Config(void);
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	UNUSED(GPIO_Pin);
 	if ((GPIO_Pin == GPIO_PIN_11) & tag_started) {
-		flagPIN11 = 1;
+		flag_exti = 1;
 	}
 }
 
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
-	UNUSED(hi2c);
 	if (hi2c->Instance == I2C1) {
-		flag_done = 1;
-		
+		flag_i2c = 1;
 		Accel_X_RAW = (int16_t)(Rec_Data[0] << 8 | Rec_Data [1]);
 		Accel_Y_RAW = (int16_t)(Rec_Data[2] << 8 | Rec_Data [3]);
 		Accel_Z_RAW = (int16_t)(Rec_Data[4] << 8 | Rec_Data [5]);
@@ -150,7 +121,6 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
 		Az = Accel_Z_RAW*100/16384.0;
 	}
 }
-
 void AccelInnit(void) {
 	ili9341_text_attr_t text_attr = {&ili9341_font_11x18,ILI9341_WHITE,	ILI9341_BLACK,0,0};
 	
@@ -275,7 +245,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart){
 			else state = 0;
 		}
 		else {
-			RxData[RxData_i] = RxData_temp;
+			RxData.RxDataArray[RxData_i] = RxData_temp;
 			RxData_i++;
 			if (RxData_i>=UART_BUFFER_SIZE){ 
 				RxData_i = 0;
@@ -304,6 +274,10 @@ void trigger (void) {
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	// Vérifie que l'interruption vient du bon canal
 	if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1) {
+		if	(timerMesure++ ==100){
+			timerMesure=0;
+			flagMesure = 1;
+		}
 		if (is_first_capture == 0) {
 			// Capture du front montant
 			ic_val1 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1); // Lit la première valeur de capture
@@ -323,16 +297,10 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim) {
 	}
 }
 
-void HAL_SYSTICK_Callback(void) {
-	if	(timerMesure++ ==100)
-	{timerMesure=0;
-	flagMesure = 1;}
-}
-
-void JouerNote(float dist) {
+void JouerNote(int dist) {
 	int note = 0;
 	
-	if (3<dist && dist<=6) {
+	if (0<dist && dist<=6) {
 		note = (int)(40000/789.99f);
 	}
 
@@ -510,14 +478,13 @@ int main(void)
 	// son
 	
 	//accelerometre
-	//AccelInnit();
+	AccelInnit();
 	tag_started = 1;
 	//accelerometre
 	
 	//uart
 	TxData.TxDataStruct.FFByte = 0xFF;
 	TxData.TxDataStruct.sizeByte = UART_BUFFER_SIZE;
-	HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
 	HAL_UART_Receive_IT(&huart5, &RxData_temp, 1);
 	//uart
 	
@@ -538,32 +505,23 @@ int main(void)
 		// uart
 		
 		// son	
-		while(1) {
-			trigger();
-			if(flagMesure ==1) {
-				char buffer[20] = {0};	
-					sprintf(buffer,"%f", distance);
-					JouerNote(distance);
-					ili9341_text_attr_t time_attr = {&ili9341_font_11x18,
-					ILI9341_WHITE, ILI9341_BLACK,0,0};
-					ili9341_draw_string(_screen, time_attr,buffer);
-					flagMesure=0;
-			}
-		}
+		// while(1) {
+			// trigger();
+			// if(flagMesure ==1) {
+				// char buffer[20] = {0};	
+					// sprintf(buffer,"%f", distance);
+					// JouerNote(distance);
+					// ili9341_text_attr_t time_attr = {&ili9341_font_11x18,
+					// ILI9341_WHITE, ILI9341_BLACK,0,0};
+					// ili9341_draw_string(_screen, time_attr,buffer);
+					// flagMesure=0;
+			// }
+		// }
 		// son
 		
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		
-		// accelerometre
-		if (flagPIN11 & flag_done) {
-			flagPIN11 = 0;
-			flag_done = 0;
-			HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR, ACCEL_XOUT_H_REG, 1, Rec_Data, 6);
-		}
-		// accelerometre
-		
 		
 		HAL_Delay(20); // a remplacer avec un timer
 		
@@ -582,10 +540,21 @@ int main(void)
 			
 		case WANDER_MAZE:
 			// Obtenir la nouvelle position d�sir�e
-			x = player->current_pos.x;
-			y = player->current_pos.y + 0.5 * STEP_SIZE;
-			// Obtenir et mettre à jour la position de l'adversaire
-			// ...
+			if (flag_exti & flag_i2c) {
+				flag_exti = 0;
+				flag_i2c = 0;
+				HAL_I2C_Mem_Read_DMA(&hi2c1, MPU6050_ADDR, ACCEL_XOUT_H_REG, 1, Rec_Data, 6);
+			}
+			x = player->current_pos.x - 0.05 * Ay;
+			y = player->current_pos.y - 0.05 * Ax;
+			TxData.TxDataStruct.var1 = x & 0xff;
+			TxData.TxDataStruct.var2 = x >> 8;
+			TxData.TxDataStruct.var3 = y & 0xff;
+			TxData.TxDataStruct.var4 = y >> 8;
+			HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
+			// Obtenir et mettre à jour la position de l'adversaire 
+			int x_enemy = RxData.RxDataStruct.var2 << 8 | RxData.RxDataStruct.var1;
+			int y_enemy = RxData.RxDataStruct.var4 << 8 | RxData.RxDataStruct.var3;
 			// Vérifier la rencontre avec l'adversaire
 			if(updatePosition(_screen, (position_t){x, y}, players)){
 				game_state = BATTLE;

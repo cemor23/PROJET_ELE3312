@@ -5,11 +5,26 @@
 
 #include "Battle.h"
 
+// Cette fonction dessine le curseur du joueur 
+void drawTarget(ili9341_t *lcd, ili9341_color_t *target_color, int target_pos_y,uint8_t target_matched) {
+	const uint16_t target_pos_x = 290 - 20; // décalage à gacuhe du cube
+	static uint16_t previous_pos_y = 0;
+	//Normalisation du target puisque la distance varie de 0 à 60
+	target_pos_y = ((target_pos_y*240)/60)-10;
+
+	ili9341_fill_rect(lcd, ILI9341_BLACK, target_pos_x, previous_pos_y, INDICATOR_WIDTH, INDICATOR_HEIGHT);
+	if(target_matched == 1){
+		ili9341_fill_rect(lcd, ILI9341_WHITE, target_pos_x, target_pos_y, INDICATOR_WIDTH, INDICATOR_HEIGHT);}
+	else{
+		ili9341_fill_rect(lcd, *target_color, target_pos_x, target_pos_y, INDICATOR_WIDTH, INDICATOR_HEIGHT);}
+	previous_pos_y = target_pos_y;
+}
 /**
 * @brief This function draws the two enemies (Ghost and Pac-Man) on the screen.
 * @param lcd [in] a pointer to the ili9341 configuration structure
 * @param local_player [in] a pointer to the player structure that encapsulates information about the local player (mainly its type)
 */
+
 void drawBattleScreen(ili9341_t *lcd, player_t *local_player) {
 	char buffer[40] = {0};
 	ili9341_fill_screen(lcd, ILI9341_BLACK);
@@ -41,7 +56,7 @@ void drawRandomTarget(ili9341_t *lcd, ili9341_color_t *target_color, uint16_t *t
 	
 	// Mise à jour de la position après counter * délai principal ms (délai d'appel à drawRandomTarget)
 	static uint16_t counter = 0;
-	const uint8_t update_threshold = 25;
+	const uint8_t update_threshold = 100;
 	if(counter > update_threshold) {
 		*target_pos_y = rand() % (SCREEN_Y + 1);
 		counter = 0;
@@ -80,9 +95,9 @@ void incrementPowerBar(ili9341_t *lcd, ili9341_color_t *bar_color, uint16_t *pow
 void updateEnemyPowerBar(ili9341_t *lcd, ili9341_color_t *bar_color, uint16_t *enemy_power) {
 		// Donnée à remplacer avec celle reçue par la carte du joueur adverse
 		int random_val = rand() % 10;
-		if(random_val <= 5) {
-			(*enemy_power) += 1;
-		}
+		//if(random_val <= 5) {
+		//	(*enemy_power) += 1;
+		//}
 		ili9341_fill_rect(lcd, *bar_color, 0, 240 - *enemy_power, INDICATOR_WIDTH, 5);
 }
 
@@ -135,7 +150,7 @@ void battle(ili9341_t *lcd, player_t *players) {
 	player_t* local_player = &players[LOCAL_PLAYER_ID];
 	player_t* enemy_player = &players[ENEMY_PLAYER_ID];
 	uint16_t local_power = 0;
-	uint16_t enemy_power = 0;
+	uint16_t enemy_power = 0; 
 	
 	uint16_t target_pos = 0;		// À comparer avec la distance mesurée par la capteur ultrason
 	uint8_t target_matched = 0;	// VRAI si la target_pos est aligné avec la distance de l'objet au capteur
@@ -144,12 +159,25 @@ void battle(ili9341_t *lcd, player_t *players) {
 	
 	uint8_t winner = 0;
 	while(winner == 0) {
-		HAL_Delay(20); // À remplacer avec un timer
+		
+		trigger();
+		if(flagMesure ==1){
+	
 		
 		drawRandomTarget(lcd, &local_player->character.color, &target_pos);
+		JouerNote(distance);
+		if((target_pos-(((distance*240)/60)-10) <= 5) && (target_pos-(((distance*240)/60)-10) >= -5)){
+				target_matched=1;
+				drawTarget(lcd, &local_player->character.color, round(distance),target_matched);}
+		else{ 
+				target_matched=0;
+				drawTarget(lcd, &local_player->character.color, round(distance),target_matched);}
 		incrementPowerBar(lcd, &local_player->character.color, &local_power, target_matched);
 		updateEnemyPowerBar(lcd, &enemy_player->character.color, &enemy_power);
 
 		winner = checkWinner(lcd, local_player, &local_power, &enemy_power);
+			flagMesure=0;
+			}
+		}
 	}
-}
+
