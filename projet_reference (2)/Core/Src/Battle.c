@@ -83,6 +83,9 @@ void incrementPowerBar(ili9341_t *lcd, ili9341_color_t *bar_color, uint16_t *pow
 	if (target_matched) {
 		(*power) += 1;
 		ili9341_fill_rect(lcd, *bar_color, x_pos, 240 - *power, INDICATOR_WIDTH, 5);
+		
+		TxData.TxDataStruct.var1 = (*power);
+		HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
 	}
 }
 
@@ -94,10 +97,7 @@ void incrementPowerBar(ili9341_t *lcd, ili9341_color_t *bar_color, uint16_t *pow
 */
 void updateEnemyPowerBar(ili9341_t *lcd, ili9341_color_t *bar_color, uint16_t *enemy_power) {
 		// Donnée à remplacer avec celle reçue par la carte du joueur adverse
-		int random_val = rand() % 10;
-		//if(random_val <= 5) {
-		//	(*enemy_power) += 1;
-		//}
+		(*enemy_power) = RxData.RxDataStruct.var1;
 		ili9341_fill_rect(lcd, *bar_color, 0, 240 - *enemy_power, INDICATOR_WIDTH, 5);
 }
 
@@ -124,7 +124,11 @@ uint8_t checkWinner(ili9341_t *lcd,  player_t *local_player, uint16_t *local_pow
 		drawGrave(lcd, PLAYER_RIGHT_X, PLAYER_Y);
 		winner = 2;
 	}
-	
+	TxData.TxDataStruct.var2 = winner;
+	HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
+	if (RxData.RxDataStruct.var2 != 0) {
+		winner = RxData.RxDataStruct.var2;
+	}
 	if(winner){
 		*local_power = 0;
 		*enemy_power = 0;
@@ -162,22 +166,27 @@ void battle(ili9341_t *lcd, player_t *players) {
 		
 		trigger();
 		if(flagMesure ==1){
-	
-		
-		drawRandomTarget(lcd, &local_player->character.color, &target_pos);
-		JouerNote(distance);
-		if((target_pos-(((distance*240)/60)-10) <= 5) && (target_pos-(((distance*240)/60)-10) >= -5)){
-				target_matched=1;
-				drawTarget(lcd, &local_player->character.color, round(distance),target_matched);}
-		else{ 
-				target_matched=0;
-				drawTarget(lcd, &local_player->character.color, round(distance),target_matched);}
-		incrementPowerBar(lcd, &local_player->character.color, &local_power, target_matched);
-		updateEnemyPowerBar(lcd, &enemy_player->character.color, &enemy_power);
-
-		winner = checkWinner(lcd, local_player, &local_power, &enemy_power);
+			drawRandomTarget(lcd, &local_player->character.color, &target_pos);
+			JouerNote(distance);
+			if((target_pos-(((distance*240)/60)-10) <= 5) && (target_pos-(((distance*240)/60)-10) >= -5)){
+					target_matched=1;
+					drawTarget(lcd, &local_player->character.color, round(distance),target_matched);}
+			else{ 
+					target_matched=0;
+					drawTarget(lcd, &local_player->character.color, round(distance),target_matched);}
+			incrementPowerBar(lcd, &local_player->character.color, &local_power, target_matched);
+			updateEnemyPowerBar(lcd, &enemy_player->character.color, &enemy_power);
+			
+			winner = checkWinner(lcd, local_player, &local_power, &enemy_power);
 			flagMesure=0;
-			}
 		}
 	}
+	TxData.TxDataStruct.var1 = 0;
+	TxData.TxDataStruct.var2 = 0;
+	TxData.TxDataStruct.var3 = 0;
+	TxData.TxDataStruct.var4 = 0;
+	TxData.TxDataStruct.var5 = 0;
+	TxData.TxDataStruct.var6 = 0;
+	HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
+}
 

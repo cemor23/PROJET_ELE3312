@@ -42,7 +42,9 @@ void choosePlayer(ili9341_t *lcd, player_t* players){
 	ili9341_draw_rect(lcd, ILI9341_WHITE, pacman_icon_pos.x + 35, 180, checkbox_size, checkbox_size);
 	
 	while(P1_chosen_character.type == NONE) {
-		HAL_Delay(20); // À remplacer avec un timer
+		while (flag_timer_4 == 0) ; // a remplacer avec un timer
+		flag_timer_4 = 0;
+		
 		if (flag_exti & flag_i2c) {
 			flag_exti = 0;
 			flag_i2c = 0;

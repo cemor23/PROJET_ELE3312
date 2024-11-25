@@ -102,6 +102,10 @@ player_t players[NUM_PLAYERS] = {0};
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 
+// timer
+volatile int flag_timer_4;
+//
+
 // accelerometre
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	UNUSED(GPIO_Pin);
@@ -388,7 +392,13 @@ void JouerNote(int dist) {
 }
 //son
 
-
+// timer
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	if (htim->Instance == TIM4) {
+		flag_timer_4++; 
+	}
+} 
+// timer
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -447,6 +457,7 @@ int main(void)
   MX_DAC_Init();
   MX_TIM2_Init();
   MX_TIM5_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 	
 	// Initialize the screen
@@ -468,6 +479,7 @@ int main(void)
 	// son
 	HAL_TIM_Base_Start(&htim2);
 	HAL_TIM_Base_Start(&htim5);
+	HAL_TIM_Base_Start_IT(&htim4);
 	HAL_TIM_IC_Start_IT(&htim2, TIM_CHANNEL_1);
 	for (int i=0;i<TABLE_LENGTH;i++) {
 		value = 0;
@@ -500,30 +512,12 @@ int main(void)
 	/* Infinite loop */
   while (1)
   {
-		// uart
-		//HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
-		// uart
-		
-		// son	
-		// while(1) {
-			// trigger();
-			// if(flagMesure ==1) {
-				// char buffer[20] = {0};	
-					// sprintf(buffer,"%f", distance);
-					// JouerNote(distance);
-					// ili9341_text_attr_t time_attr = {&ili9341_font_11x18,
-					// ILI9341_WHITE, ILI9341_BLACK,0,0};
-					// ili9341_draw_string(_screen, time_attr,buffer);
-					// flagMesure=0;
-			// }
-		// }
-		// son
-		
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
 		
-		HAL_Delay(20); // a remplacer avec un timer
+		while (flag_timer_4 == 0) ; // a remplacer avec un timer
+		flag_timer_4 = 0;
 		
 		switch(game_state) {
 		case CHOOSE_PLAYER:
@@ -547,16 +541,25 @@ int main(void)
 			}
 			x = player->current_pos.x - 0.05 * Ay;
 			y = player->current_pos.y - 0.05 * Ax;
+			
 			TxData.TxDataStruct.var1 = x & 0xff;
 			TxData.TxDataStruct.var2 = x >> 8;
 			TxData.TxDataStruct.var3 = y & 0xff;
 			TxData.TxDataStruct.var4 = y >> 8;
-			HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
+			
 			// Obtenir et mettre à jour la position de l'adversaire 
-			int x_enemy = RxData.RxDataStruct.var2 << 8 | RxData.RxDataStruct.var1;
-			int y_enemy = RxData.RxDataStruct.var4 << 8 | RxData.RxDataStruct.var3;
-			// Vérifier la rencontre avec l'adversaire
-			if(updatePosition(_screen, (position_t){x, y}, players)){
+			HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
+			enemy->previous_pos = enemy->current_pos;
+			enemy->current_pos.x = RxData.RxDataStruct.var2 << 8 | RxData.RxDataStruct.var1;
+			enemy->current_pos.y = RxData.RxDataStruct.var4 << 8 | RxData.RxDataStruct.var3;
+			drawRemotePlayer(_screen, enemy);
+			// Vérifier la rencontre avec l'adversaire 
+			if(updatePosition(_screen, (position_t){x, y}, players) | RxData.RxDataStruct.var5) {
+				TxData.TxDataStruct.var1 = 0;
+				TxData.TxDataStruct.var2 = 0;
+				TxData.TxDataStruct.var3 = 0;
+				TxData.TxDataStruct.var4 = 0;
+				TxData.TxDataStruct.var5 = 1;
 				game_state = BATTLE;
 				continue;
 			}
@@ -565,6 +568,7 @@ int main(void)
 		case BATTLE:
 			battle(_screen, players);
 			game_state = INIT_MAZE;
+			flag_timer_4 = 0;
 			break;
 		}
   }
@@ -634,6 +638,7 @@ void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef* hdac) {
 		HAL_DAC_Start_DMA(hdac, DAC_CHANNEL_1, tab_value1, TABLE_LENGTH, DAC_ALIGN_12B_R);
 	}
 }
+
 /* USER CODE END 4 */
 
 /**

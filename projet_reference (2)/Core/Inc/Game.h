@@ -110,4 +110,8 @@ extern void trigger (void);
 extern void JouerNote(int dist);
 // son
 
+// timer
+extern volatile int flag_timer_4;
+// timer
+
 #endif /* INC_GAME_H_ */
