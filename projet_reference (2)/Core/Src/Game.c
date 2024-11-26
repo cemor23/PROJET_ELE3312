@@ -79,6 +79,9 @@ void drawBitmap(ili9341_t *lcd, uint16_t *data, position_t pos, uint16_t width, 
 * @param players [in/out] a player_t array of player_t structures containing player information
 */
 void drawMaze(ili9341_t *lcd, player_t *players) {
+	
+	
+	
 	ili9341_fill_screen(lcd, ILI9341_BLACK);
 	sprite_metadata_t *sprite = NULL;
 	
@@ -108,7 +111,12 @@ void drawMaze(ili9341_t *lcd, player_t *players) {
 				drawBitmap(lcd, sprite->data, (position_t){x*10, y*10}, sprite->width, sprite->height);
 			} else {
 				// Draw Coin
+				if( x == 6 & y ==2){
+				ili9341_fill_circle(lcd,ILI9341_RED,x*10 + 5, y*10 + 5,1);
+				}
+				else{
 				ili9341_fill_circle(lcd,ILI9341_WHITE,x*10 + 5, y*10 + 5,1);
+				}
 			}
 		}
 	}

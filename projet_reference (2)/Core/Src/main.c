@@ -58,6 +58,10 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+
+// Position pastille de puissance
+float player_power_buff = 1;
+
 // accelerometre
 float Ax;
 float Ay;
@@ -547,6 +551,12 @@ int main(void)
 			TxData.TxDataStruct.var3 = y & 0xff;
 			TxData.TxDataStruct.var4 = y >> 8;
 			
+			if (((player->current_pos.x - (6*10+5))*(player->current_pos.x - (6*10+5))+(player->current_pos.x - (2*10+5))*(player->current_pos.x - (2*10+5)))<100 & TxData.TxDataStruct.var6==0)
+			{TxData.TxDataStruct.var6 = 1;
+				player_power_buff = 1.15;
+			
+			}
+			
 			// Obtenir et mettre à jour la position de l'adversaire 
 			HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
 			enemy->previous_pos = enemy->current_pos;
@@ -560,6 +570,7 @@ int main(void)
 				TxData.TxDataStruct.var3 = 0;
 				TxData.TxDataStruct.var4 = 0;
 				TxData.TxDataStruct.var5 = 1;
+				TxData.TxDataStruct.var6 = 0;
 				game_state = BATTLE;
 				continue;
 			}
