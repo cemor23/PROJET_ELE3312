@@ -3,7 +3,7 @@
 <title>Static Call Graph - [ELE3312_Project\ELE3312_Project.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image ELE3312_Project\ELE3312_Project.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6220000: Last Updated: Sun Nov 24 23:11:32 2024
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6220000: Last Updated: Mon Nov 25 20:51:06 2024
 <BR><P>
 <H3>Maximum Stack Usage =        616 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -1670,7 +1670,7 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> startup_stm32f446xx.o(RESET)
 </UL>
-<P><STRONG><a name="[104]"></a>battle</STRONG> (Thumb, 514 bytes, Stack size 56 bytes, battle.o(.text.battle))
+<P><STRONG><a name="[104]"></a>battle</STRONG> (Thumb, 550 bytes, Stack size 56 bytes, battle.o(.text.battle))
 <BR><BR>[Stack]<UL><LI>Max Depth = 536<LI>Call Chain = battle &rArr; drawBattleScreen &rArr; drawPacMan &rArr; writeFillArcHelper &rArr; __hardfp_sin &rArr; __ieee754_rem_pio2 &rArr; __aeabi_dsub &rArr; __aeabi_dadd &rArr; _double_epilogue &rArr; _double_round
 </UL>
 <BR>[Calls]<UL><LI><a href="#[109]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;JouerNote
@@ -1690,7 +1690,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[127]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;updatePosition
 </UL>
 
-<P><STRONG><a name="[10a]"></a>checkWinner</STRONG> (Thumb, 248 bytes, Stack size 72 bytes, battle.o(.text.checkWinner))
+<P><STRONG><a name="[10a]"></a>checkWinner</STRONG> (Thumb, 256 bytes, Stack size 72 bytes, battle.o(.text.checkWinner))
 <BR><BR>[Stack]<UL><LI>Max Depth = 392<LI>Call Chain = checkWinner &rArr; drawGrave &rArr; ili9341_fill_circle &rArr; ili9341_draw_line &rArr; ili9341_fill_rect &rArr; ili9341_spi_write_command_data &rArr; HAL_SPI_Transmit &rArr; SPI_WaitFlagStateUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[8f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_Delay
@@ -1758,8 +1758,8 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[10a]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;checkWinner
 </UL>
 
-<P><STRONG><a name="[114]"></a>drawMaze</STRONG> (Thumb, 672 bytes, Stack size 64 bytes, game.o(.text.drawMaze))
-<BR><BR>[Stack]<UL><LI>Max Depth = 344<LI>Call Chain = drawMaze &rArr; ili9341_fill_circle &rArr; ili9341_draw_line &rArr; ili9341_fill_rect &rArr; ili9341_spi_write_command_data &rArr; HAL_SPI_Transmit &rArr; SPI_WaitFlagStateUntilTimeout
+<P><STRONG><a name="[114]"></a>drawMaze</STRONG> (Thumb, 700 bytes, Stack size 72 bytes, game.o(.text.drawMaze))
+<BR><BR>[Stack]<UL><LI>Max Depth = 352<LI>Call Chain = drawMaze &rArr; ili9341_fill_circle &rArr; ili9341_draw_line &rArr; ili9341_fill_rect &rArr; ili9341_spi_write_command_data &rArr; HAL_SPI_Transmit &rArr; SPI_WaitFlagStateUntilTimeout
 </UL>
 <BR>[Calls]<UL><LI><a href="#[113]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ili9341_fill_circle
 <LI><a href="#[118]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;ili9341_spi_tft_release
@@ -1993,7 +1993,7 @@ Global Symbols
 <LI><a href="#[114]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;drawMaze
 </UL>
 
-<P><STRONG><a name="[60]"></a>main</STRONG> (Thumb, 1096 bytes, Stack size 56 bytes, main.o(.text.main))
+<P><STRONG><a name="[60]"></a>main</STRONG> (Thumb, 1160 bytes, Stack size 56 bytes, main.o(.text.main))
 <BR><BR>[Stack]<UL><LI>Max Depth = 616<LI>Call Chain = main &rArr; choosePlayer &rArr; drawPacMan &rArr; writeFillArcHelper &rArr; __hardfp_sin &rArr; __ieee754_rem_pio2 &rArr; __aeabi_dsub &rArr; __aeabi_dadd &rArr; _double_epilogue &rArr; _double_round
 </UL>
 <BR>[Calls]<UL><LI><a href="#[9b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_DAC_Start_DMA

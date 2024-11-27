@@ -111,14 +111,10 @@ void drawMaze(ili9341_t *lcd, player_t *players) {
 				drawBitmap(lcd, sprite->data, (position_t){x*10, y*10}, sprite->width, sprite->height);
 			} else {
 				// Draw Coin
-				if( x == 6 & y ==2){
-				ili9341_fill_circle(lcd,ILI9341_RED,x*10 + 5, y*10 + 5,1);
-				}
-				else{
 				ili9341_fill_circle(lcd,ILI9341_WHITE,x*10 + 5, y*10 + 5,1);
-				}
 			}
 		}
+		ili9341_fill_circle(lcd,ILI9341_RED, 12*10 + 5, 9*10 + 5, 2);
 	}
 	
 	// Draw mobile characters that might not be on the map anymore

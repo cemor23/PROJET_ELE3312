@@ -27,10 +27,8 @@ Project File Date:  11/24/2024
 <h2>Output:</h2>
 *** Using Compiler 'V6.22', folder: 'D:\Users\cedrm\AppData\Local\Keil_v5\ARM\ARMCLANG\Bin'
 Build target 'ELE3312_Project'
-assembling startup_stm32f446xx.s...
-compiling tim.c...
-../Core/Src/main.c(551): warning: passing 'char[8]' to parameter of type 'const uint8_t *' (aka 'const unsigned char *') converts between pointers to integer types where one is of the unique plain 'char' type and the other is not [-Wpointer-sign]
-  551 |                         HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
+../Core/Src/main.c(561): warning: passing 'char[8]' to parameter of type 'const uint8_t *' (aka 'const unsigned char *') converts between pointers to integer types where one is of the unique plain 'char' type and the other is not [-Wpointer-sign]
+  561 |                         HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
       |                                                        ^~~~~~~~~~~~~~~~~~
 ../Drivers/STM32F4xx_HAL_Driver/Inc\stm32f4xx_hal_uart.h(749): note: passing argument to parameter 'pData' here
   749 | HAL_StatusTypeDef HAL_UART_Transmit_DMA(UART_HandleTypeDef *huart, const uint8_t *pData, uint16_t Size);
@@ -38,7 +36,7 @@ compiling tim.c...
 1 warning generated.
 compiling main.c...
 linking...
-Program Size: Code=41780 RO-data=4464 RW-data=5024 ZI-data=12856  
+Program Size: Code=41916 RO-data=4464 RW-data=5028 ZI-data=12860  
 FromELF: creating hex file...
 "ELE3312_Project\ELE3312_Project.axf" - 0 Error(s), 1 Warning(s).
 

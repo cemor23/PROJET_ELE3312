@@ -551,9 +551,9 @@ int main(void)
 			TxData.TxDataStruct.var3 = y & 0xff;
 			TxData.TxDataStruct.var4 = y >> 8;
 			
-			if (((player->current_pos.x - (6*10+5))*(player->current_pos.x - (6*10+5))+(player->current_pos.x - (2*10+5))*(player->current_pos.x - (2*10+5)))<100 & TxData.TxDataStruct.var6==0)
-			{TxData.TxDataStruct.var6 = 1;
-				player_power_buff = 1.15;
+			if (((player->current_pos.x - (12*10+5))*(player->current_pos.x - (12*10+5))+(player->current_pos.x - (9*10+5))*(player->current_pos.x - (9*10+5)))<100 & RxData.RxDataStruct.var6!=12 & TxData.TxDataStruct.var6 != 12) {
+				TxData.TxDataStruct.var6 = 12;
+				player_power_buff = 3;
 			
 			}
 			
@@ -569,7 +569,7 @@ int main(void)
 				TxData.TxDataStruct.var2 = 0;
 				TxData.TxDataStruct.var3 = 0;
 				TxData.TxDataStruct.var4 = 0;
-				TxData.TxDataStruct.var5 = 1;
+				TxData.TxDataStruct.var5 = 12;
 				TxData.TxDataStruct.var6 = 0;
 				game_state = BATTLE;
 				continue;

@@ -10,7 +10,7 @@ void drawTarget(ili9341_t *lcd, ili9341_color_t *target_color, int target_pos_y,
 	const uint16_t target_pos_x = 290 - 20; // décalage à gacuhe du cube
 	static uint16_t previous_pos_y = 0;
 	//Normalisation du target puisque la distance varie de 0 à 60
-	target_pos_y = ((target_pos_y*240)/60)-10;
+	target_pos_y = ((target_pos_y*240)/60)-8;
 
 	ili9341_fill_rect(lcd, ILI9341_BLACK, target_pos_x, previous_pos_y, INDICATOR_WIDTH, INDICATOR_HEIGHT);
 	if(target_matched == 1){
@@ -81,7 +81,7 @@ void drawRandomTarget(ili9341_t *lcd, ili9341_color_t *target_color, uint16_t *t
 void incrementPowerBar(ili9341_t *lcd, ili9341_color_t *bar_color, uint16_t *power, uint8_t target_matched) {
 	const uint16_t x_pos = 310;
 	if (target_matched) {
-		(*power) += 1;
+		(*power) += 2 * player_power_buff;
 		ili9341_fill_rect(lcd, *bar_color, x_pos, 240 - *power, INDICATOR_WIDTH, 5);
 		
 		TxData.TxDataStruct.var1 = (*power);
@@ -125,8 +125,9 @@ uint8_t checkWinner(ili9341_t *lcd,  player_t *local_player, uint16_t *local_pow
 		winner = 2;
 	}
 	TxData.TxDataStruct.var2 = winner;
+	TxData.TxDataStruct.var3 = 13;
 	HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
-	if (RxData.RxDataStruct.var2 != 0) {
+	if (RxData.RxDataStruct.var3 == 13) {
 		winner = RxData.RxDataStruct.var2;
 	}
 	if(winner){
@@ -168,7 +169,7 @@ void battle(ili9341_t *lcd, player_t *players) {
 		if(flagMesure ==1){
 			drawRandomTarget(lcd, &local_player->character.color, &target_pos);
 			JouerNote(distance);
-			if((target_pos-(((distance*240)/60)-10) <= 5) && (target_pos-(((distance*240)/60)-10) >= -5)){
+			if((target_pos-(((distance*240)/60)-8) <= 5) && (target_pos-(((distance*240)/60)-8) >= -5)){
 					target_matched=1;
 					drawTarget(lcd, &local_player->character.color, round(distance),target_matched);}
 			else{ 

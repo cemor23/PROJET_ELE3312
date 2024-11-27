@@ -63,6 +63,7 @@ typedef struct {
 	 uint16_t *data;
 } sprite_metadata_t;
 
+extern float player_power_buff;
 sprite_metadata_t *getSprite(uint16_t id);
 sprite_metadata_t * getFigureSprite(position_t delta, character_type_t type);
 void drawBitmap(ili9341_t *lcd, uint16_t *data, position_t pos, uint16_t width, uint16_t height);
