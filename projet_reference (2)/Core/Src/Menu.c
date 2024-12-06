@@ -90,7 +90,8 @@ void choosePlayer(ili9341_t *lcd, player_t* players){
 	players[LOCAL_PLAYER_ID].character = P1_chosen_character;
 	
 	
-	while ((RxData.RxDataStruct.var1 != 0x11) & (RxData.RxDataStruct.var1 != 0x12)) {HAL_Delay(20);};
+	
+	// while ((RxData.RxDataStruct.var1 != 0x11) & (RxData.RxDataStruct.var1 != 0x12)) {HAL_Delay(20);};
 	
 	players[ENEMY_PLAYER_ID].character = P1_chosen_character.type == PACMAN ? ghost : pacman;
 	

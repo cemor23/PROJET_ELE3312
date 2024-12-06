@@ -559,12 +559,12 @@ int main(void)
 			
 			// Obtenir et mettre à jour la position de l'adversaire 
 			HAL_UART_Transmit_DMA(&huart5, TxData.TxDataArray, UART_BUFFER_SIZE);
-			enemy->previous_pos = enemy->current_pos;
-			enemy->current_pos.x = RxData.RxDataStruct.var2 << 8 | RxData.RxDataStruct.var1;
-			enemy->current_pos.y = RxData.RxDataStruct.var4 << 8 | RxData.RxDataStruct.var3;
+//			enemy->previous_pos = enemy->current_pos;
+//			enemy->current_pos.x = RxData.RxDataStruct.var2 << 8 | RxData.RxDataStruct.var1;
+//			enemy->current_pos.y = RxData.RxDataStruct.var4 << 8 | RxData.RxDataStruct.var3;
 			drawRemotePlayer(_screen, enemy);
 			// Vérifier la rencontre avec l'adversaire 
-			if(updatePosition(_screen, (position_t){x, y}, players) | RxData.RxDataStruct.var5) {
+			if(updatePosition(_screen, (position_t){x, y}, players)) { //| RxData.RxDataStruct.var5) {
 				TxData.TxDataStruct.var1 = 0;
 				TxData.TxDataStruct.var2 = 0;
 				TxData.TxDataStruct.var3 = 0;

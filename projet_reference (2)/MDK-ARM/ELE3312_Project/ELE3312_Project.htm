@@ -3,9 +3,9 @@
 <title>Static Call Graph - [ELE3312_Project\ELE3312_Project.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image ELE3312_Project\ELE3312_Project.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6220000: Last Updated: Mon Nov 25 20:51:06 2024
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6220000: Last Updated: Thu Dec  5 20:21:28 2024
 <BR><P>
-<H3>Maximum Stack Usage =        616 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
+<H3>Maximum Stack Usage =        608 bytes + Unknown(Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
 main &rArr; choosePlayer &rArr; drawPacMan &rArr; writeFillArcHelper &rArr; __hardfp_sin &rArr; __ieee754_rem_pio2 &rArr; __aeabi_dsub &rArr; __aeabi_dadd &rArr; _double_epilogue &rArr; _double_round
 <P>
@@ -1704,8 +1704,8 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[104]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;battle
 </UL>
 
-<P><STRONG><a name="[10c]"></a>choosePlayer</STRONG> (Thumb, 832 bytes, Stack size 144 bytes, menu.o(.text.choosePlayer))
-<BR><BR>[Stack]<UL><LI>Max Depth = 560<LI>Call Chain = choosePlayer &rArr; drawPacMan &rArr; writeFillArcHelper &rArr; __hardfp_sin &rArr; __ieee754_rem_pio2 &rArr; __aeabi_dsub &rArr; __aeabi_dadd &rArr; _double_epilogue &rArr; _double_round
+<P><STRONG><a name="[10c]"></a>choosePlayer</STRONG> (Thumb, 792 bytes, Stack size 136 bytes, menu.o(.text.choosePlayer))
+<BR><BR>[Stack]<UL><LI>Max Depth = 552<LI>Call Chain = choosePlayer &rArr; drawPacMan &rArr; writeFillArcHelper &rArr; __hardfp_sin &rArr; __ieee754_rem_pio2 &rArr; __aeabi_dsub &rArr; __aeabi_dadd &rArr; _double_epilogue &rArr; _double_round
 </UL>
 <BR>[Calls]<UL><LI><a href="#[81]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dsub
 <LI><a href="#[112]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_dcmple
@@ -1993,8 +1993,8 @@ Global Symbols
 <LI><a href="#[114]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;drawMaze
 </UL>
 
-<P><STRONG><a name="[60]"></a>main</STRONG> (Thumb, 1160 bytes, Stack size 56 bytes, main.o(.text.main))
-<BR><BR>[Stack]<UL><LI>Max Depth = 616<LI>Call Chain = main &rArr; choosePlayer &rArr; drawPacMan &rArr; writeFillArcHelper &rArr; __hardfp_sin &rArr; __ieee754_rem_pio2 &rArr; __aeabi_dsub &rArr; __aeabi_dadd &rArr; _double_epilogue &rArr; _double_round
+<P><STRONG><a name="[60]"></a>main</STRONG> (Thumb, 1144 bytes, Stack size 56 bytes, main.o(.text.main))
+<BR><BR>[Stack]<UL><LI>Max Depth = 608<LI>Call Chain = main &rArr; choosePlayer &rArr; drawPacMan &rArr; writeFillArcHelper &rArr; __hardfp_sin &rArr; __ieee754_rem_pio2 &rArr; __aeabi_dsub &rArr; __aeabi_dadd &rArr; _double_epilogue &rArr; _double_round
 </UL>
 <BR>[Calls]<UL><LI><a href="#[9b]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_DAC_Start_DMA
 <LI><a href="#[126]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_IC_Start_IT
